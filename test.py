@@ -3,7 +3,7 @@ import pygame
 from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
-
+import time
 
 #Initialization
 pygame.init()
@@ -37,28 +37,42 @@ glMatrixMode(GL_MODELVIEW)
 zoom = -5.0
 glTranslatef(0.0, 0.0, zoom)
 
+def intersect_rect(r1, r2):
+    # r1 and r2 are tuples: (x, z, width, depth)
+    x1, z1, w1, d1 = r1
+    x2, z2, w2, d2 = r2
 
-def draw_textured_cube_at(x, y, z):
+    left = max(x1, x2)
+    right = min(x1 + w1, x2 + w2)
+    back = max(z1, z2)
+    front = min(z1 + d1, z2 + d2)
+
+    if left < right and back < front:
+        return (left, back, right - left, front - back)
+    else:
+        return None
+
+def draw_textured_cuboid_at(x, y, z, width, height, depth):
     glBindTexture(GL_TEXTURE_2D, texture_id)
     glBegin(GL_QUADS)
 
-    # Offset all vertices by (x, y, z)
-    def V(v): return (v[0] + x, v[1] + y, v[2] + z)
+    # Offset and scale vertices
+    def V(v): return (v[0] * width + x, v[1] * height + y, v[2] * depth + z)
 
-    # Define cube faces using offset vertices
+    # Define cuboid faces
     face_vertices = [
         # Back face
-        (V((0, 0, 0)), V((2, 0, 0)), V((2, 2, 0)), V((0, 2, 0))),
+        (V((0.0, 0.0, 0.0)), V((1.0, 0.0, 0.0)), V((1.0, 1.0, 0.0)), V((0.0, 1.0, 0.0))),
         # Front face
-        (V((0, 0, 2)), V((2, 0, 2)), V((2, 2, 2)), V((0, 2, 2))),
+        (V((0.0, 0.0, 1.0)), V((1.0, 0.0, 1.0)), V((1.0, 1.0, 1.0)), V((0.0, 1.0, 1.0))),
         # Bottom face
-        (V((0, 0, 0)), V((2, 0, 0)), V((2, 0, 2)), V((0, 0, 2))),
+        (V((0.0, 0.0, 0.0)), V((1.0, 0.0, 0.0)), V((1.0, 0.0, 1.0)), V((0.0, 0.0, 1.0))),
         # Top face
-        (V((0, 2, 0)), V((2, 2, 0)), V((2, 2, 2)), V((0, 2, 2))),
+        (V((0.0, 1.0, 0.0)), V((1.0, 1.0, 0.0)), V((1.0, 1.0, 1.0)), V((0.0, 1.0, 1.0))),
         # Right face
-        (V((2, 0, 0)), V((2, 2, 0)), V((2, 2, 2)), V((2, 0, 2))),
+        (V((1.0, 0.0, 0.0)), V((1.0, 1.0, 0.0)), V((1.0, 1.0, 1.0)), V((1.0, 0.0, 1.0))),
         # Left face
-        (V((0, 0, 0)), V((0, 2, 0)), V((0, 2, 2)), V((0, 0, 2))),
+        (V((0.0, 0.0, 0.0)), V((0.0, 1.0, 0.0)), V((0.0, 1.0, 1.0)), V((0.0, 0.0, 1.0))),
     ]
 
     tex_coords = [(0, 0), (1, 0), (1, 1), (0, 1)]
@@ -69,83 +83,148 @@ def draw_textured_cube_at(x, y, z):
             glVertex3fv(face[i])
     glEnd()
 
-# Main game
-running = 1
-dragging = False
-last_mouse_pos = None
-sx_angle = 0
-sy_angle = 0
-sz_angle = 0
-camera_y = 0
-cube_pos = [-1.0, -1.0, -1.0]
+def game():
 
-while running:
+    # Main game
+    running = 1
+    dragging = False
+    last_mouse_pos = None
+    last_spawn_time = time.time()
+    force_quit_interval = 10
+    cube_y = 0
+    azimuth = 0.0      # Horizontal angle (left/right)
+    elevation = 30.0   # Vertical angle (up/down)
+    radius = 10.0      # Distance from target (zoom)
+    target = [0.0, 0.0, 0.0]  # Point to orbit around
+    frame_counter = 0 # Debug use
+    space_pressed = False # Check spacebar pressed
 
-    # Each frame initialize variables
-    x_angle = 0
-    y_angle = 0
-    z_angle = 0
+    # Cube data structure
+    cubes = [{
+        "pos": [-1.0, -1.0, -1.0],
+        "rot": [0.0, 0.0, 0.0],
+        "size": [2.0, 2.0, 2.0]
+    }]
 
-    for event in pygame.event.get():
+    while running:
 
-        if event.type == pygame.QUIT:
+        # Each frame initialize variables
+        x_angle = 0
+        y_angle = 0
+        z_angle = 0
+        current_time = time.time()
+
+        if current_time - last_spawn_time >= force_quit_interval:
+            lose()
+
+        for event in pygame.event.get():
+
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # Left click
+                    dragging = True
+                    last_mouse_pos = pygame.mouse.get_pos()
+
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1:
+                    dragging = False
+                elif event.button == 4:  # Scroll up
+                    radius -= 0.5  # Zoom in
+                elif event.button == 5:  # Scroll down
+                    radius += 0.5  # Zoom out
+
+            elif event.type == pygame.MOUSEMOTION and dragging:
+                x, y = pygame.mouse.get_pos()
+                dx = x - last_mouse_pos[0]
+                dy = y - last_mouse_pos[1]
+                
+                azimuth -= dx * 0.3
+                elevation += dy * 0.3
+                elevation = max(-89.9, min(89.9, elevation))  # Clamp to avoid gimbal lock
+
+                last_mouse_pos = (x, y)
+            
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_SPACE:
+                    space_pressed = False
+
+        keys = pygame.key.get_pressed()
+        if keys[K_ESCAPE]:
             pygame.quit()
             quit()
 
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # Left click
-                dragging = True
-                last_mouse_pos = pygame.mouse.get_pos()
+        if keys[K_w]:
+            cube_y += 0.1  # Move camera up
+        if keys[K_s]:
+            cube_y -= 0.1  # Move camera down
+        if keys[K_SPACE]:
+            if not space_pressed:
+                if len(cubes) >= 2:
 
-        elif event.type == pygame.MOUSEBUTTONUP:
-            if event.button == 1:
-                dragging = False
-            elif event.button == 4:  # Scroll up
-                zoom += 0.5  # Zoom in
-            elif event.button == 5:  # Scroll down
-                zoom -= 0.5  # Zoom out
+                    # Get base rectangles (x, z, width, depth)
+                    r1 = (cubes[-2]["pos"][0], cubes[-2]["pos"][2], cubes[-2]["size"][0], cubes[-2]["size"][2])
+                    r2 = (cubes[-1]["pos"][0], cubes[-1]["pos"][2], cubes[-1]["size"][0], cubes[-1]["size"][2])
+                    intersection = intersect_rect(r1, r2)
 
-        elif event.type == pygame.MOUSEMOTION and dragging:
-            y, x = pygame.mouse.get_pos()
-            dx = x - last_mouse_pos[1]
-            dy = y - last_mouse_pos[0]
+                    if intersection == None:
+                        lose()
+                    else:
+                        ix, iz, iw, id = intersection
+                        cubes[-1]["pos"][0] = ix
+                        cubes[-1]["pos"][2] = iz
+                        cubes[-1]["size"][0] = iw
+                        cubes[-1]["size"][2] = id
+                        print("new size:", ix, iz, iw, id)
 
-            # Horizontal drag → X-axis rotation
-            y_angle += dy * 0.5
+                # Spawn new cube
+                new_cube = {
+                    "pos": [cubes[-1]["pos"][0] + 3, cubes[-1]["pos"][1] + 1.0, cubes[-1]["pos"][2]],
+                    "rot": cubes[-1]["rot"][:],
+                    "size": cubes[-1]["size"][:]  # Copy size
+                }
+                cubes.append(new_cube)
+                last_spawn_time = current_time
 
-            # Vertical drag → Y and Z-axis rotation
-            x_angle += dx * 0.5
+                print("new cube, cube stack size =", len(cubes))
+                print("frame =", frame_counter)
 
-            last_mouse_pos = (y, x)
+            space_pressed = True
 
-    keys = pygame.key.get_pressed()
-    if keys[K_ESCAPE]:
-        pygame.quit()
-        quit()
+        elif len(cubes) != 1:
+            cubes[-1]["pos"][0] -= 0.01
+        
+        cubes[-1]["rot"][0] = (cubes[-1]["rot"][0] + x_angle + 360) % 360
+        cubes[-1]["rot"][1] = (cubes[-1]["rot"][1] + y_angle + 360) % 360
+        cubes[-1]["rot"][2] = (cubes[-1]["rot"][2] + z_angle + 360) % 360
 
-    if keys[K_LEFT]:
-        cube_pos[0] -= 0.1
-    if keys[K_RIGHT]:
-        cube_pos[0] += 0.1
-    if keys[K_UP]:
-        cube_pos[2] -= 0.1
-    if keys[K_DOWN]:
-        cube_pos[2] += 0.1
-    if keys[K_w]:
-        camera_y += 0.1  # Move camera up
-    if keys[K_s]:
-        camera_y -= 0.1  # Move camera down
-    
-    sx_angle = (sx_angle + x_angle + 360) % 360
-    sy_angle = (sy_angle + y_angle + 360) % 360
-    sz_angle = (sz_angle + z_angle + 360) % 360
+        cam_x = 0 + radius * math.cos(math.radians(elevation)) * math.sin(math.radians(azimuth))
+        cam_y = cube_y + radius * math.sin(math.radians(elevation))
+        cam_z = 0 + radius * math.cos(math.radians(elevation)) * math.cos(math.radians(azimuth))
 
-    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
-    glLoadIdentity()
-    glTranslatef(0.0, -camera_y, zoom)
-    glRotatef(sx_angle, 1, 0, 0)
-    glRotatef(sy_angle, 0, 1, 0)
-    glRotatef(sz_angle, 0, 0, 1)
-    draw_textured_cube_at(cube_pos[0], cube_pos[1], cube_pos[2])
-    pygame.display.flip()
-    pygame.time.wait(10)
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
+        glLoadIdentity()
+        target = cubes[-1]["pos"]
+        gluLookAt(cam_x, cam_y+cube_y, cam_z, target[0], target[1]+cube_y, target[2], 0, 1, 0)
+        # glTranslatef(0.0, -cube_y, zoom)
+        for cube in cubes:
+            glPushMatrix()
+            glTranslatef(*cube["pos"])
+            glRotatef(cube["rot"][0], 1, 0, 0)
+            glRotatef(cube["rot"][1], 0, 1, 0)
+            glRotatef(cube["rot"][2], 0, 0, 1)
+            draw_textured_cuboid_at(cube["pos"][0], cube["pos"][1], cube["pos"][2], cube["size"][0], cube["size"][1], cube["size"][2])
+            glPopMatrix()
+        
+        # cube_y += 0.05
+        frame_counter += 1
+        
+        pygame.display.flip()
+        pygame.time.wait(10)
+
+def lose():
+    quit()
+
+game()
