@@ -3,6 +3,7 @@ import pygame
 from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
+import random
 import time
 
 #Initialization
@@ -38,43 +39,35 @@ zoom = -5.0
 glTranslatef(0.0, 0.0, zoom)
 
 def intersect_rect(r1, r2):
-    # r1 and r2 are tuples: (x, y, side_length)
-    x1, y1, s1 = r1
-    x2, y2, s2 = r2
+    # r1 and r2 are tuples: (x, z, width, depth)
+    x1, z1, w1, d1 = r1
+    x2, z2, w2, d2 = r2
 
-    # Compute overlap boundaries
     left = max(x1, x2)
-    right = min(x1 + s1, x2 + s2)
-    bottom = max(y1, y2)
-    top = min(y1 + s1, y2 + s2)
+    right = min(x1 + w1, x2 + w2)
+    back = max(z1, z2)
+    front = min(z1 + d1, z2 + d2)
 
-    # Check for intersection
-    if left < right and bottom < top:
-        return (left, bottom, right - left, top - bottom)  # (x, y, width, height)
+    if left < right and back < front:
+        return (left, back, right - left, front - back)
     else:
-        return None  # No intersection
+        return None
 
 def draw_textured_cuboid_at(x, y, z, width, height, depth):
     glBindTexture(GL_TEXTURE_2D, texture_id)
     glBegin(GL_QUADS)
 
-    # Offset and scale vertices
-    def V(v): return (v[0] * width + x, v[1] * height + y, v[2] * depth + z)
+    # Offset and scale vertices — REMOVE the position offset here
+    def V(v): return (v[0] * width, v[1] * height, v[2] * depth)
 
     # Define cuboid faces
     face_vertices = [
-        # Back face
-        (V((0, 0, 0)), V((1, 0, 0)), V((1, 1, 0)), V((0, 1, 0))),
-        # Front face
-        (V((0, 0, 1)), V((1, 0, 1)), V((1, 1, 1)), V((0, 1, 1))),
-        # Bottom face
-        (V((0, 0, 0)), V((1, 0, 0)), V((1, 0, 1)), V((0, 0, 1))),
-        # Top face
-        (V((0, 1, 0)), V((1, 1, 0)), V((1, 1, 1)), V((0, 1, 1))),
-        # Right face
-        (V((1, 0, 0)), V((1, 1, 0)), V((1, 1, 1)), V((1, 0, 1))),
-        # Left face
-        (V((0, 0, 0)), V((0, 1, 0)), V((0, 1, 1)), V((0, 0, 1))),
+        (V((0.0, 0.0, 0.0)), V((1.0, 0.0, 0.0)), V((1.0, 1.0, 0.0)), V((0.0, 1.0, 0.0))),  # Back
+        (V((0.0, 0.0, 1.0)), V((1.0, 0.0, 1.0)), V((1.0, 1.0, 1.0)), V((0.0, 1.0, 1.0))),  # Front
+        (V((0.0, 0.0, 0.0)), V((1.0, 0.0, 0.0)), V((1.0, 0.0, 1.0)), V((0.0, 0.0, 1.0))),  # Bottom
+        (V((0.0, 1.0, 0.0)), V((1.0, 1.0, 0.0)), V((1.0, 1.0, 1.0)), V((0.0, 1.0, 1.0))),  # Top
+        (V((1.0, 0.0, 0.0)), V((1.0, 1.0, 0.0)), V((1.0, 1.0, 1.0)), V((1.0, 0.0, 1.0))),  # Right
+        (V((0.0, 0.0, 0.0)), V((0.0, 1.0, 0.0)), V((0.0, 1.0, 1.0)), V((0.0, 0.0, 1.0))),  # Left
     ]
 
     tex_coords = [(0, 0), (1, 0), (1, 1), (0, 1)]
@@ -104,7 +97,8 @@ def game():
     # Cube data structure
     cubes = [{
         "pos": [-1.0, -1.0, -1.0],
-        "rot": [0.0, 0.0, 0.0]
+        "rot": [0.0, 0.0, 0.0],
+        "size": [2.0, 2.0, 2.0]
     }]
 
     while running:
@@ -162,20 +156,69 @@ def game():
         if keys[K_s]:
             cube_y -= 0.1  # Move camera down
         if keys[K_SPACE]:
-            if space_pressed == False:
+            if not space_pressed:
+                cubes[-1]["moving"] = False  # stop the current cube
+
+                # Only check intersection if there are at least 2 cubes
+                if len(cubes) >= 2:
+                    r1 = (cubes[-2]["pos"][0], cubes[-2]["pos"][2],
+                        cubes[-2]["size"][0], cubes[-2]["size"][2])
+                    r2 = (cubes[-1]["pos"][0], cubes[-1]["pos"][2],
+                        cubes[-1]["size"][0], cubes[-1]["size"][2])
+                    intersection = intersect_rect(r1, r2)
+
+                    if intersection is None:
+                        lose()
+                    else:
+                        ix, iz, iw, id = intersection
+                        cubes[-1]["pos"][0] = ix
+                        cubes[-1]["pos"][2] = iz
+                        cubes[-1]["size"][0] = iw
+                        cubes[-1]["size"][2] = id
+                        print("new size:", ix, iz, iw, id)
+
+                # --- Spawn new cube ---
+                delta_x = random.uniform(-10.0, 10.0)
+                delta_z = random.uniform(-10.0, 10.0)
+
+                target_x = cubes[-1]["pos"][0]
+                target_z = cubes[-1]["pos"][2]
+
+                spawn_x = target_x + delta_x
+                spawn_z = target_z + delta_z
+                spawn_y = cubes[-1]["pos"][1] + 2.0
+
+                dx = target_x - spawn_x
+                dy = 0.0
+                dz = target_z - spawn_z
+
+                arrival_time = random.uniform(1.0, 3.0)
+                direction = [dx / (arrival_time * 100),
+                            dy / (arrival_time * 100),
+                            dz / (arrival_time * 100)]
+
                 new_cube = {
-                    "pos": [cubes[-1]["pos"][0]+3, cubes[-1]["pos"][1]+1.0, cubes[-1]["pos"][2]],
-                    "rot": [cubes[-1]["rot"][0], cubes[-1]["rot"][1], cubes[-1]["rot"][2]]
+                    "pos": [spawn_x, spawn_y, spawn_z],
+                    "rot": cubes[-1]["rot"][:],
+                    "size": cubes[-1]["size"][:],
+                    "target": [target_x, spawn_y, target_z],
+                    "direction": direction,   # <--- new parameter
+                    "moving": True            # <--- flag
                 }
                 cubes.append(new_cube)
                 last_spawn_time = current_time
 
                 print("new cube, cube stack size =", len(cubes))
                 print("frame =", frame_counter)
+
             space_pressed = True
-        
+
         elif len(cubes) != 1:
-            cubes[-1]["pos"][0] -= 0.01
+            if cube.get("moving", True):   # Only move if not stopped
+                cubes[-1]["pos"][0] += cubes[-1]["direction"][0]
+                cubes[-1]["pos"][1] += cubes[-1]["direction"][1]
+                cubes[-1]["pos"][2] += cubes[-1]["direction"][2]
+
         
         cubes[-1]["rot"][0] = (cubes[-1]["rot"][0] + x_angle + 360) % 360
         cubes[-1]["rot"][1] = (cubes[-1]["rot"][1] + y_angle + 360) % 360
@@ -187,8 +230,17 @@ def game():
 
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
         glLoadIdentity()
-        target = cubes[-1]["pos"]
-        gluLookAt(cam_x, cam_y+cube_y, cam_z, target[0], target[1]+cube_y, target[2], 0, 1, 0)
+        
+        if len(cubes) == 1:
+            top_cube = cubes[-1]
+        else:
+            top_cube = cubes[-2]
+        center_x = top_cube["pos"][0] + top_cube["size"][0] / 2.0
+        center_y = top_cube["pos"][1] + top_cube["size"][1] / 2.0
+        center_z = top_cube["pos"][2] + top_cube["size"][2] / 2.0
+
+        gluLookAt(cam_x, cam_y + cube_y, cam_z, center_x, center_y + 1.0, center_z, 0, 1, 0)
+
         # glTranslatef(0.0, -cube_y, zoom)
         for cube in cubes:
             glPushMatrix()
@@ -196,7 +248,7 @@ def game():
             glRotatef(cube["rot"][0], 1, 0, 0)
             glRotatef(cube["rot"][1], 0, 1, 0)
             glRotatef(cube["rot"][2], 0, 0, 1)
-            draw_textured_cuboid_at(cube["pos"][0], cube["pos"][1], cube["pos"][2], 2, 2, 2)
+            draw_textured_cuboid_at(cube["pos"][0], cube["pos"][1], cube["pos"][2], cube["size"][0], cube["size"][1], cube["size"][2])
             glPopMatrix()
         
         # cube_y += 0.05
