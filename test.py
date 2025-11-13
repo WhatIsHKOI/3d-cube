@@ -85,14 +85,15 @@ def game():
     dragging = False
     last_mouse_pos = None
     last_spawn_time = time.time()
+    second_counter = time.time()
     force_quit_interval = 10
     cube_y = 0
     azimuth = 0.0      # Horizontal angle (left/right)
     elevation = 30.0   # Vertical angle (up/down)
     radius = 10.0      # Distance from target (zoom)
-    target = [0.0, 0.0, 0.0]  # Point to orbit around
     frame_counter = 0 # Debug use
     space_pressed = False # Check spacebar pressed
+    level = 0
 
     # Cube data structure
     cubes = [{
@@ -109,8 +110,12 @@ def game():
         z_angle = 0
         current_time = time.time()
 
+        if current_time - second_counter >= 1.0:
+            print("1 second passed", frame_counter)
+            second_counter = current_time
         if current_time - last_spawn_time >= force_quit_interval:
             lose()
+        level = len(cubes)
 
         for event in pygame.event.get():
 
@@ -177,25 +182,28 @@ def game():
                         cubes[-1]["size"][2] = id
                         print("new size:", ix, iz, iw, id)
 
+                else:
+                    frame_counter = 0
+
                 # --- Spawn new cube ---
-                delta_x = random.uniform(-10.0, 10.0)
-                delta_z = random.uniform(-10.0, 10.0)
+                spawn_angle = random.uniform(-math.pi, math.pi)
 
                 target_x = cubes[-1]["pos"][0]
                 target_z = cubes[-1]["pos"][2]
 
-                spawn_x = target_x + delta_x
-                spawn_z = target_z + delta_z
+                spawn_x = target_x + 10.0*math.cos(spawn_angle)
+                spawn_z = target_z + 10.0*math.sin(spawn_angle)
                 spawn_y = cubes[-1]["pos"][1] + 2.0
 
                 dx = target_x - spawn_x
                 dy = 0.0
                 dz = target_z - spawn_z
 
-                arrival_time = random.uniform(1.0, 3.0)
-                direction = [dx / (arrival_time * 100),
-                            dy / (arrival_time * 100),
-                            dz / (arrival_time * 100)]
+                arrival_frame = 105.0/(1.0+pow(math.e, 0.0006*(frame_counter-6000)))+20.0
+                print("new block arrive in", arrival_frame, "frames")
+                direction = [dx / arrival_frame,
+                             dy / arrival_frame,
+                             dz / arrival_frame]
 
                 new_cube = {
                     "pos": [spawn_x, spawn_y, spawn_z],
@@ -239,7 +247,7 @@ def game():
         center_y = top_cube["pos"][1] + top_cube["size"][1] / 2.0
         center_z = top_cube["pos"][2] + top_cube["size"][2] / 2.0
 
-        gluLookAt(cam_x, cam_y + cube_y, cam_z, center_x, center_y + 1.0, center_z, 0, 1, 0)
+        gluLookAt(cam_x, cam_y + cube_y, cam_z, center_x, center_y + cube_y + 1.0, center_z, 0, 1, 0)
 
         # glTranslatef(0.0, -cube_y, zoom)
         for cube in cubes:
