@@ -104,8 +104,10 @@ def main():
     while running:
 
         screen.fill((0, 0, 0))
-        draw_text_in_box(screen, "Press SPACE to start", (screen_width//2-200, screen_height//2-100, screen_width//2+200, screen_height//2), size=32, align="center")
-        draw_text_in_box(screen, "Press ESC to quit game", (screen_width//2-200, screen_height//2, screen_width//2+200, screen_height//2+100), size=32, align="center")
+        draw_text_in_box(screen, "3D cube stacking game", (screen_width//2-200, screen_height//4-50, screen_width//2+200, screen_height//4), size=32, align="center")
+        draw_text_in_box(screen, "Press SPACE to start", (screen_width//2-200, screen_height//2-50, screen_width//2+200, screen_height//2), size=32, align="center")
+        draw_text_in_box(screen, "Press ESC to quit game", (screen_width//2-200, screen_height//2, screen_width//2+200, screen_height//2+50), size=32, align="center")
+        draw_text_in_box(screen, "Press L to view local leaderboard", (screen_width//2-200, screen_height//2+50, screen_width//2+200, screen_height//2+100), size=32, align="center")
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -117,6 +119,8 @@ def main():
                 quit()
             elif (keys[K_ESCAPE]):
                 quit()
+            elif (keys[K_l]):
+                leaderboard()
 
         pygame.display.flip()
     
@@ -143,7 +147,7 @@ def stop_and_spawn_cube(cubes, frame_counter):
         intersection = intersect_rect(r1, r2)
 
         if intersection is None:
-            lose()
+            lose(len(cubes)-2)
             return cubes, frame_counter
         else:
             ix, iz, iw, id = intersection
@@ -351,15 +355,38 @@ def game():
         pygame.display.flip()
         pygame.time.wait(10)
 
-def lose():
+def lose(cnt):
+
+    leaderboard = []
+    with open("record.txt", "r") as f1:
+        x = int(f1.readline())
+        for i in range(x):
+            leaderboard.append(int(f1.readline()))
+    
+    leaderboard.append(cnt)
+    print(leaderboard)
+    for i in range(x-1, -1, -1):
+        print(i, i+1)
+        if leaderboard[i] < leaderboard[i+1]:
+            temp = leaderboard[i+1]
+            leaderboard[i+1] = leaderboard[i]
+            leaderboard[i] = temp
+        else:
+            break
+    
+    with open("record.txt", "w") as f1:
+        f1.write(str(x+1)+'\n')
+        for i in leaderboard:
+            f1.write(str(i)+'\n')
 
     screen = pygame.display.set_mode(display)
     running = 1
     while running:
 
         screen.fill((0, 0, 0))
-        draw_text_in_box(screen, "You Lose! Press SPACE to restart", (screen_width//2-200, screen_height//2-100, screen_width//2+200, screen_height//2), size=32, align="center")
-        draw_text_in_box(screen, "Press ESC to quit game", (screen_width//2-200, screen_height//2, screen_width//2+200, screen_height//2+100), size=32, align="center")
+        draw_text_in_box(screen, "You Lose! Press SPACE to restart", (screen_width//2-200, screen_height//2-50, screen_width//2+200, screen_height//2), size=32, align="center")
+        draw_text_in_box(screen, "Press ESC to back to main screen", (screen_width//2-200, screen_height//2, screen_width//2+200, screen_height//2+50), size=32, align="center")
+        draw_text_in_box(screen, "Your score:" + str(cnt), (screen_width//2-200, screen_height//2+50, screen_width//2+200, screen_height//2+100), size=32, align="center")
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -370,10 +397,36 @@ def lose():
                 game()
                 quit()
             elif (keys[K_ESCAPE]):
-                quit()
-
+                main()
         pygame.display.flip()
     
     quit()
+
+def leaderboard():
+
+    screen = pygame.display.set_mode(display)
+    running = 1
+    while running:
+
+        screen.fill((0, 0, 0))
+        draw_text_in_box(screen, "Local leaderboard", (screen_width//4-100, screen_height//4-50, screen_width//2+200, screen_height//4), size=32, align="center")
+        draw_text_in_box(screen, "Press ESC to back to main screen", (screen_width//2-200, screen_height//4, screen_width//2+200, screen_height//4+50), size=32, align="center")
+
+        with open("record.txt", "r") as f1:
+            x = int(f1.readline())
+            for i in range(1, min(x, 5)+1):
+                draw_text_in_box(screen, str(i)+". "+str(int(f1.readline())), (screen_width//2-200, screen_height//4+i*50+50, screen_width//2+200, screen_height//4+i*50+100), size=32, align="center")
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            keys = pygame.key.get_pressed()
+            if (keys[K_ESCAPE]):
+                main()
+        pygame.display.flip()
+    
+    quit()
+
 
 main()
