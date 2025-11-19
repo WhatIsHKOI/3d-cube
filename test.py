@@ -1,3 +1,7 @@
+"""
+Provides a prototype version of the game in 1 file, where test and debug could be performed.
+"""
+
 import math
 import pygame
 from pygame.locals import *
@@ -113,14 +117,14 @@ def main():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-            keys = pygame.key.get_pressed()
-            if (keys[K_SPACE]):
-                game()
-                quit()
-            elif (keys[K_ESCAPE]):
-                quit()
-            elif (keys[K_l]):
-                leaderboard()
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_SPACE:
+                    game()
+                    quit()
+                elif event.key == pygame.K_ESCAPE:
+                    quit()
+                elif event.key == pygame.K_l:
+                    leaderboard()
 
         pygame.display.flip()
     
@@ -375,9 +379,9 @@ def lose(cnt):
             break
     
     with open("record.txt", "w") as f1:
-        f1.write(str(x+1)+'\n')
-        for i in leaderboard:
-            f1.write(str(i)+'\n')
+        f1.write(str(max(10, len(leaderboard)))+'\n')
+        for i in range(max(10, len(leaderboard))):
+            f1.write(str(leaderboard[i])+'\n')
 
     screen = pygame.display.set_mode(display)
     running = 1
@@ -393,11 +397,12 @@ def lose(cnt):
                 pygame.quit()
                 quit()
             keys = pygame.key.get_pressed()
-            if (keys[K_SPACE]):
-                game()
-                quit()
-            elif (keys[K_ESCAPE]):
-                main()
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_SPACE:
+                    game()
+                    quit()
+                elif event.key == pygame.K_ESCAPE:
+                    main()                                                    
         pygame.display.flip()
     
     quit()
@@ -421,12 +426,11 @@ def leaderboard():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-            keys = pygame.key.get_pressed()
-            if (keys[K_ESCAPE]):
-                main()
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_ESCAPE:
+                    main()
         pygame.display.flip()
     
     quit()
-
 
 main()
