@@ -42,10 +42,9 @@ def write_leaderboard(scores: List[int], filename: str = LEADERBOARD_FILE) -> No
         scores (List[int]): Scores to write (will be truncated/padded).
         filename (str): Path to leaderboard file.
     """
-    scores = sorted(scores, reverse=True)
     with open(filename, "w") as f:
-        f.write(str(max(MAX_DISPLAY_SCORES, len(scores))) + "\n")
-        for i in range(max(MAX_DISPLAY_SCORES, len(scores))):
+        f.write((str(MAX_DISPLAY_SCORES) + "\n"))
+        for i in range(MAX_DISPLAY_SCORES):
             s = scores[i] if i < len(scores) else 0
             f.write(str(s) + "\n")
 
@@ -60,6 +59,7 @@ def update_leaderboard(new_score: int, filename: str = LEADERBOARD_FILE) -> None
     """
     scores = read_leaderboard(filename)
     scores.append(new_score)
+    scores = sorted(scores, reverse=True)
     write_leaderboard(scores, filename)
 
 
@@ -82,6 +82,7 @@ def show_leaderboard() -> None:
                   size=28, align="center")
 
         scores = read_leaderboard()
+        # print(scores)
         for i, s in enumerate(sorted(scores, reverse=True)[:5], start=1):
             draw_text(screen, f"{i}. {s}",
                       (SCREEN_WIDTH//2-200, SCREEN_HEIGHT//4+i*50+50,

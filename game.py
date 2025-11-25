@@ -10,17 +10,19 @@ from OpenGL.GLU import *
 from pygame.locals import DOUBLEBUF, OPENGL
 
 from models import Cube
+from cube_special import apply_random_acceleration, apply_random_rotation
 from graphics import load_texture, draw_textured_cuboid
 from game_logic import spawn_next_cube, stop_and_spawn
 from leaderboard import update_leaderboard
 from hud import draw_hud_text
 from lose_screen import lose_screen
 from config import (
-    DISPLAY, SCREEN_WIDTH, SCREEN_HEIGHT, TEXTURE_PATH,
+    DISPLAY, SCREEN_WIDTH, SCREEN_HEIGHT,
     INITIAL_CUBE_POS, INITIAL_CUBE_SIZE,
     INITIAL_AZIMUTH, INITIAL_ELEVATION, INITIAL_RADIUS,
     ELEVATION_MIN, ELEVATION_MAX, MOUSE_SENSITIVITY,
-    ZOOM_STEP, CAMERA_Y_OFFSET, FRAME_DELAY_MS
+    ZOOM_STEP, CAMERA_Y_OFFSET, FRAME_DELAY_MS,
+    LEADERBOARD_FILE, textures
 )
 
 
@@ -90,7 +92,12 @@ def game_loop(main_menu_callback) -> None:
     gluPerspective(45.0, SCREEN_WIDTH / SCREEN_HEIGHT, 0.1, 50.0)
     glMatrixMode(GL_MODELVIEW)
 
-    texture_id = load_texture(TEXTURE_PATH)
+    # Load textures
+    for name, file in textures.items():
+        textures[name] = None
+    for name, file in textures.items():
+        if file is None:
+            textures[name] = load_texture("assets/textures/"+name+".png")
 
     # Camera
     azimuth = INITIAL_AZIMUTH
@@ -147,6 +154,7 @@ def game_loop(main_menu_callback) -> None:
                 did_lose = stop_and_spawn(stack)
                 if did_lose:
                     score = len(stack) - 2
+                    update_leaderboard(score, LEADERBOARD_FILE)
                     lose_screen(score, restart_callback=game_loop, menu_callback=main_menu_callback)
                     return
 
@@ -163,6 +171,12 @@ def game_loop(main_menu_callback) -> None:
         active = stack[-1]
         if active.moving_state in (1, 2):
             update_cube_motion(active)
+
+        # Update for special cubes
+        if active.texture_id == "var_a":
+            apply_random_acceleration(active, -0.003, 0.015)
+        elif active.texture_id == "var_sz":
+            apply_random_acceleration(active, -0.001, 0.03)
 
         # Camera focus
         focus_cube = stack[-2] if len(stack) >= 2 else stack[-1]
@@ -185,7 +199,7 @@ def game_loop(main_menu_callback) -> None:
             glRotatef(cube.rotation[0], 1, 0, 0)
             glRotatef(cube.rotation[1], 0, 1, 0)
             glRotatef(cube.rotation[2], 0, 0, 1)
-            draw_textured_cuboid(tuple(cube.size), texture_id)
+            draw_textured_cuboid(tuple(cube.size), cube.texture_id)
             glPopMatrix()
 
         # HUD overlay (score)

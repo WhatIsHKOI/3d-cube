@@ -5,6 +5,7 @@ OpenGL rendering helpers: texture loading and cube drawing.
 import pygame
 from OpenGL.GL import *
 from OpenGL.GLU import *
+from config import textures
 
 
 def load_texture(path: str) -> int:
@@ -23,12 +24,13 @@ def load_texture(path: str) -> int:
     return texture_id
 
 
-def draw_textured_cuboid(size, texture_id: int) -> None:
+def draw_textured_cuboid(size, texture_id: str) -> None:
     """Draw a textured cuboid at the origin with given size."""
     width, height, depth = size
 
     glEnable(GL_TEXTURE_2D)
-    glBindTexture(GL_TEXTURE_2D, texture_id)
+    glBindTexture(GL_TEXTURE_2D, textures[texture_id])
+    # print("draw", textures[texture_id])
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
     glColor3f(1, 1, 1)
 

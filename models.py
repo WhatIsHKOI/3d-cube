@@ -22,6 +22,9 @@ class Cube:
         target (List[float]): target position [x, y, z].
         travel_distance (float): straight-line distance from spawn to target.
         traveled (float): accumulated distance traveled along the path.
+        texture_id: which texture is used to render this cube in the following list:
+            0 - normal cube
+            1 - cube with variable acceleration
     """
     position: List[float]
     rotation: List[float]
@@ -32,6 +35,7 @@ class Cube:
     target: List[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
     travel_distance: float = 0.0
     traveled: float = 0.0
+    texture_id: str = "normal"
 
     def step_distance(self) -> float:
         """

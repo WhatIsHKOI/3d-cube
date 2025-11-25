@@ -6,7 +6,7 @@ import math
 import random
 from typing import Optional, Tuple, List
 from models import Cube
-from config import SPAWN_RADIUS, STACK_HEIGHT_STEP, ARRIVAL_FRAMES
+from config import SPAWN_RADIUS, STACK_HEIGHT_STEP, ARRIVAL_FRAMES, textures
 
 
 def intersect_rect(r1: Tuple[float, float, float, float],
@@ -85,6 +85,7 @@ def spawn_next_cube(stack: List[Cube]) -> None:
     dz = target_z - spawn_z
     direction = [dx / ARRIVAL_FRAMES, 0.0, dz / ARRIVAL_FRAMES]
     travel_distance = math.sqrt(dx**2 + dz**2)
+    texture_choice = random.choice(list(textures))
 
     new_cube = Cube(
         position=[spawn_x, spawn_y, spawn_z],
@@ -95,7 +96,8 @@ def spawn_next_cube(stack: List[Cube]) -> None:
         spawn=[spawn_x, spawn_y, spawn_z],
         target=[target_x, spawn_y, target_z],
         travel_distance=travel_distance,
-        traveled=0.0
+        traveled=0.0,
+        texture_id=texture_choice
     )
     stack.append(new_cube)
 

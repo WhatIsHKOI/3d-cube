@@ -10,7 +10,6 @@ WINDOW_TITLE = "3D Cube Stacking"
 
 # Assets
 FONT_PATH = "assets/font_pixel.ttf"
-TEXTURE_PATH = "assets/cube_texture.png"
 LEADERBOARD_FILE = "record.txt"
 
 # Gameplay
@@ -33,3 +32,10 @@ CAMERA_Y_OFFSET = 1.0          # small lift above the cube center
 
 # Timing
 FRAME_DELAY_MS = 10
+
+# Variable assets
+textures = {
+    "normal": None,
+    "var_a": None,
+    "var_sz": None
+}
