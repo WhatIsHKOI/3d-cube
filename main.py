@@ -7,6 +7,7 @@ from ui import draw_text
 from leaderboard import show_leaderboard
 from game import game_loop
 from config import DISPLAY, SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_TITLE
+from tutorial import show_tutorial
 
 
 def main_menu() -> None:
@@ -23,19 +24,19 @@ def main_menu() -> None:
         draw_text(screen, "3D Cube Stacking Game",
                   (SCREEN_WIDTH//2-250, SCREEN_HEIGHT//4-50,
                    SCREEN_WIDTH//2+250, SCREEN_HEIGHT//4),
-                  size=42, align="center")
+                   size=42, align="center")
         draw_text(screen, "Press SPACE to start",
                   (SCREEN_WIDTH//2-200, SCREEN_HEIGHT//2-50,
                    SCREEN_WIDTH//2+200, SCREEN_HEIGHT//2),
-                  size=32, align="center")
+                   size=32, align="center")
         draw_text(screen, "Press L to view local leaderboard",
                   (SCREEN_WIDTH//2-250, SCREEN_HEIGHT//2,
                    SCREEN_WIDTH//2+250, SCREEN_HEIGHT//2+50),
-                  size=28, align="center")
+                   size=28, align="center")
         draw_text(screen, "Press ESC to quit",
                   (SCREEN_WIDTH//2-200, SCREEN_HEIGHT//2+75,
                    SCREEN_WIDTH//2+200, SCREEN_HEIGHT//2+125),
-                  size=28, align="center")
+                   size=28, align="center")
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -43,6 +44,7 @@ def main_menu() -> None:
                 quit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
+                    show_tutorial(menu_callback=main_menu)
                     game_loop(main_menu_callback=main_menu)
                 elif event.key == pygame.K_l:
                     show_leaderboard()

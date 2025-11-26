@@ -22,19 +22,19 @@ def lose_screen(score: int, restart_callback, menu_callback):
         draw_text(screen, "You Lose!", 
                   (SCREEN_WIDTH//2-200, SCREEN_HEIGHT//4-50,
                    SCREEN_WIDTH//2+200, SCREEN_HEIGHT//4),
-                  size=42, align="center")
+                   size=42, align="center")
         draw_text(screen, f"Your Score: {score}", 
                   (SCREEN_WIDTH//2-200, SCREEN_HEIGHT//2-50,
                    SCREEN_WIDTH//2+200, SCREEN_HEIGHT//2),
-                  size=32, align="center")
+                   size=32, align="center")
         draw_text(screen, "Press SPACE to restart", 
                   (SCREEN_WIDTH//2-200, SCREEN_HEIGHT//2,
                    SCREEN_WIDTH//2+200, SCREEN_HEIGHT//2+50),
-                  size=28, align="center")
+                   size=28, align="center")
         draw_text(screen, "Press ESC to return to main menu", 
                   (SCREEN_WIDTH//2-250, SCREEN_HEIGHT//2+75,
                    SCREEN_WIDTH//2+250, SCREEN_HEIGHT//2+125),
-                  size=28, align="center")
+                   size=28, align="center")
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:

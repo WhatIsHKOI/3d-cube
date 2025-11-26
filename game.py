@@ -106,6 +106,7 @@ def game_loop(main_menu_callback) -> None:
     dragging = False
     last_mouse_pos = None
     vertical_offset = 0.0
+    frame_counter = 0
 
     # Stack initialization
     stack = [
@@ -173,10 +174,10 @@ def game_loop(main_menu_callback) -> None:
             update_cube_motion(active)
 
         # Update for special cubes
-        if active.texture_id == "var_a":
-            apply_random_acceleration(active, -0.003, 0.015)
-        elif active.texture_id == "var_sz":
-            apply_random_acceleration(active, -0.001, 0.03)
+        if active.texture_id == "var_a" and frame_counter % 40 == 0:
+            apply_random_acceleration(active, -0.15, 3.0)
+        if active.texture_id == "var_sz" and frame_counter % 40 == 0:
+            apply_random_acceleration(active, -0.25, 7.5)
 
         # Camera focus
         focus_cube = stack[-2] if len(stack) >= 2 else stack[-1]
@@ -205,6 +206,8 @@ def game_loop(main_menu_callback) -> None:
         # HUD overlay (score)
         score = len(stack) - 2
         draw_hud_text(f"Score: {score}", 20, SCREEN_HEIGHT - 40)
+
+        frame_counter = frame_counter+1
 
         pygame.display.flip()
         pygame.time.wait(FRAME_DELAY_MS)
