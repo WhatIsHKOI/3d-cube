@@ -7,6 +7,42 @@ import random
 from models import Cube
 
 
+import random
+from models import Cube
+
+def teleport_forward(cube: Cube) -> None:
+    """
+    Teleport the cube to a random forward position along its spawn→target line,
+    constrained to the direction it is currently moving.
+
+    Parameters:
+        cube (Cube): The cube to teleport.
+    """
+    # Current progress fraction (0 = spawn, 1 = target)
+    if cube.travel_distance == 0:
+        return  # avoid division by zero
+    current_fraction = cube.traveled / cube.travel_distance
+
+    # Only allow teleport further along the line (frontwards)
+    if cube.moving_state == 1:
+        new_fraction = random.uniform(current_fraction, min(2.0, current_fraction+0.25))
+    else:
+        new_fraction = random.uniform(max(0.0, current_fraction-0.25), current_fraction)
+    print("teleport", new_fraction)
+
+    # Interpolate between spawn and target
+    new_x = cube.spawn[0] + new_fraction * (cube.target[0] - cube.spawn[0])
+    new_y = cube.spawn[1] + new_fraction * (cube.target[1] - cube.spawn[1])
+    new_z = cube.spawn[2] + new_fraction * (cube.target[2] - cube.spawn[2])
+
+    cube.position[0] = new_x
+    cube.position[1] = new_y
+    cube.position[2] = new_z
+
+    # Update traveled distance so bounce logic stays consistent
+    cube.traveled = new_fraction * cube.travel_distance
+
+
 def apply_random_acceleration(
     cube: Cube,
     min_factor: float = 0.1,

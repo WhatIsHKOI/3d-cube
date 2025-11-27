@@ -37,5 +37,5 @@ FRAME_DELAY_MS = 10
 textures = {
     "normal": None,
     "var_a": None,
-    "var_sz": None
+    "var_pos": None
 }

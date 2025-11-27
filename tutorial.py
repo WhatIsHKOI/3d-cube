@@ -25,7 +25,7 @@ def show_tutorial(menu_callback) -> None:
                   (SCREEN_WIDTH//2-400, SCREEN_HEIGHT//2,
                    SCREEN_WIDTH//2+400, SCREEN_HEIGHT//2+50),
                    size=28, align="center")
-        draw_text(screen, "Purple cubes always change their speed.", 
+        draw_text(screen, "Purple cubes occasionally teleports when moving.", 
                   (SCREEN_WIDTH//2-400, SCREEN_HEIGHT//2+50,
                    SCREEN_WIDTH//2+400, SCREEN_HEIGHT//2+100),
                    size=28, align="center")
@@ -40,13 +40,15 @@ def show_tutorial(menu_callback) -> None:
                 quit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    screen.fill((0, 0, 0))
-                    draw_text(screen, "START!", 
-                              (SCREEN_WIDTH//2-400, SCREEN_HEIGHT//2-50,
-                              SCREEN_WIDTH//2+400, SCREEN_HEIGHT//2+50),
-                              size=84, align="center")
-                    pygame.display.flip()
-                    pygame.time.wait(1000)
+                    start_game_text = ["3", "2", "1", "START!"]
+                    for round_text in start_game_text:
+                        screen.fill((0, 0, 0))
+                        draw_text(screen, round_text, 
+                                (SCREEN_WIDTH//2-400, SCREEN_HEIGHT//2-50,
+                                SCREEN_WIDTH//2+400, SCREEN_HEIGHT//2+50),
+                                size=84, align="center")
+                        pygame.display.flip()
+                        pygame.time.wait(1000)
                     return
                 elif event.key == pygame.K_ESCAPE:
                     menu_callback()

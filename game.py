@@ -10,7 +10,7 @@ from OpenGL.GLU import *
 from pygame.locals import DOUBLEBUF, OPENGL
 
 from models import Cube
-from cube_special import apply_random_acceleration, apply_random_rotation
+from cube_special import apply_random_acceleration, apply_random_rotation, teleport_forward
 from graphics import load_texture, draw_textured_cuboid
 from game_logic import spawn_next_cube, stop_and_spawn
 from leaderboard import update_leaderboard
@@ -174,10 +174,10 @@ def game_loop(main_menu_callback) -> None:
             update_cube_motion(active)
 
         # Update for special cubes
-        if active.texture_id == "var_a" and frame_counter % 40 == 0:
-            apply_random_acceleration(active, -0.15, 3.0)
-        if active.texture_id == "var_sz" and frame_counter % 40 == 0:
-            apply_random_acceleration(active, -0.25, 7.5)
+        if active.texture_id == "var_a" and frame_counter % 80 == 0:
+            apply_random_acceleration(active, 0.1, 3.0)
+        if active.texture_id == "var_pos" and frame_counter % 80 == 0:
+            teleport_forward(active)
 
         # Camera focus
         focus_cube = stack[-2] if len(stack) >= 2 else stack[-1]
@@ -208,6 +208,10 @@ def game_loop(main_menu_callback) -> None:
         draw_hud_text(f"Score: {score}", 20, SCREEN_HEIGHT - 40)
 
         frame_counter = frame_counter+1
+
+        # Debug area
+        # if active.travel_distance != 0:
+        #     print("travel", active.traveled / active.travel_distance)
 
         pygame.display.flip()
         pygame.time.wait(FRAME_DELAY_MS)
