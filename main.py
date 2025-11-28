@@ -6,7 +6,7 @@ import pygame
 from ui import draw_text
 from leaderboard import show_leaderboard
 from game import game_loop
-from config import DISPLAY, SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_TITLE
+from config import DISPLAY, SCREEN_WIDTH, SCREEN_HEIGHT, WINDOW_TITLE, init_config
 from tutorial import show_tutorial
 
 
@@ -14,8 +14,11 @@ def main_menu() -> None:
     """
     Show the main menu and route to game or leaderboard.
     """
-    pygame.init()
-    screen = pygame.display.set_mode(DISPLAY)
+    # display_info = pygame.display.Info()
+    # SCREEN_WIDTH, SCREEN_HEIGHT = display_info.current_w, display_info.current_h
+    # DISPLAY = (SCREEN_WIDTH, SCREEN_HEIGHT)
+    # print(DISPLAY)
+    screen = pygame.display.set_mode(DISPLAY) 
     pygame.display.set_caption(WINDOW_TITLE)
 
     is_running = True
@@ -56,4 +59,5 @@ def main_menu() -> None:
 
 
 if __name__ == "__main__":
+    init_config()
     main_menu()

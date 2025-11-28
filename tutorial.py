@@ -6,6 +6,7 @@ import pygame
 from ui import draw_text
 from config import DISPLAY, SCREEN_WIDTH, SCREEN_HEIGHT
 
+
 def show_tutorial(menu_callback) -> None:
 
     screen = pygame.display.set_mode(DISPLAY)

@@ -2,7 +2,10 @@
 Global configuration constants for window, assets, gameplay, and camera.
 """
 
-# Window
+import pygame
+
+
+# # Window
 SCREEN_WIDTH = 1200
 SCREEN_HEIGHT = 675
 DISPLAY = (SCREEN_WIDTH, SCREEN_HEIGHT)
@@ -30,7 +33,7 @@ MOUSE_SENSITIVITY = 0.3
 ZOOM_STEP = 0.5
 CAMERA_Y_OFFSET = 1.0          # small lift above the cube center
 
-# Timing
+# import Timing
 FRAME_DELAY_MS = 10
 
 # Variable assets
@@ -39,3 +42,11 @@ textures = {
     "var_a": None,
     "var_pos": None
 }
+
+def init_config():
+    # Window initialize
+    pygame.init()
+    # display_info = pygame.display.Info()
+    # SCREEN_WIDTH, SCREEN_HEIGHT = display_info.current_w, display_info.current_h
+    # DISPLAY = (SCREEN_WIDTH, SCREEN_HEIGHT)
+    # print(SCREEN_WIDTH, SCREEN_HEIGHT)
